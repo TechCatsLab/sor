@@ -1,3 +1,16 @@
-package: github.com/TechCatsLab/sor
+package: ""
 import:
 - package: github.com/TechCatsLab/logging
+- package: github.com/go-sql-driver/mysql
+  repo: git@github.com:go-sql-driver/mysql.git
+- package: google.golang.org/appengine
+  repo: git@github.com:golang/appengine.git
+  subpackages:
+  - cloudsql
+  - cloudsql
+- package: golang.org/x/crypto
+  repo: git@github.com:golang/crypto.git
+- package: golang.org/x/sys
+  repo: git@github.com:golang/sys.git
+- package: github.com/dgrijalva/jwt-go
+  version: ^3.2.0
