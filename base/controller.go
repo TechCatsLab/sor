@@ -10,14 +10,16 @@ import (
 )
 
 type Controller struct {
-	db *sql.DB
-	baseUrl string
+	db       *sql.DB
+	baseUrl  string
+	tokenKey string
 }
 
-func New(db *sql.DB, baseUrl string) *Controller {
+func New(db *sql.DB, baseUrl, tokenKey string) *Controller {
 	return &Controller{
-		db: db,
-		baseUrl: baseUrl,
+		db:       db,
+		baseUrl:  baseUrl,
+		tokenKey: tokenKey,
 	}
 }
 
@@ -27,4 +29,8 @@ func (c *Controller) SQLStore() *sql.DB {
 
 func (c *Controller) BaseUrl() string {
 	return c.baseUrl
+}
+
+func (c *Controller) TokenKey() string {
+	return c.tokenKey
 }
