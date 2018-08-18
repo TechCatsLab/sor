@@ -10,41 +10,37 @@ import (
 	"fmt"
 	"strings"
 
-	jwtgo "github.com/dgrijalva/jwt-go"
-
 	"github.com/TechCatsLab/apix/http/server"
-	"github.com/TechCatsLab/sor/base/constants"
+	log "github.com/TechCatsLab/logging/logrus"
+	"github.com/TechCatsLab/sor/base"
+	jwtgo "github.com/dgrijalva/jwt-go"
 )
 
-const (
-	claimUID = "uid"
-	claimAdmin = "admin"
+var (
+	errInvalidToken = errors.New("jwt: invalid token")
 )
 
-func GetUID(ctx *server.Context, tokenHMACKey string) (uint, error) {
-	claims, err := checkJWT(ctx, tokenHMACKey)
-	if err != nil {
-		return constants.InvalidUID, err
-	}
-
-	rawUID := uint(claims[claimUID].(float64))
-
-	return rawUID, nil
+type JWTFilter struct {
+	token string
 }
 
-func GetAdmin(ctx *server.Context, tokenHMACKey string) (bool, error) {
-	claims, err := checkJWT(ctx, tokenHMACKey)
+func (f *JWTFilter) Check(ctx *server.Context) bool {
+	c := &base.Context{ctx}
+
+	claims, err := f.checkJWT(c)
 	if err != nil {
-		return constants.InvalidAdmin, err
+		log.Error(err)
+		return false
 	}
 
-	isAdmin := claims[claimAdmin].(bool)
+	rawUID := uint(claims[base.CtxKeyUID].(uint))
+	c.SetUID(rawUID)
 
-	return isAdmin, nil
+	return true
 }
 
 // checkJWT check whether the token is valid, it returns claims if valid.
-func checkJWT(ctx *server.Context, tokenHMACKey string) (jwtgo.MapClaims, error) {
+func (f *JWTFilter) checkJWT(ctx *base.Context) (jwtgo.MapClaims, error) {
 	var (
 		err error
 	)
@@ -64,14 +60,13 @@ func checkJWT(ctx *server.Context, tokenHMACKey string) (jwtgo.MapClaims, error)
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(tokenHMACKey), nil
+		return []byte(f.token), nil
 	})
 
 	claims, ok := token.Claims.(jwtgo.MapClaims)
 
 	if !ok || !token.Valid {
-		err = errors.New("invalid token")
-		return nil, err
+		return nil, errInvalidToken
 	}
 
 	return claims, nil

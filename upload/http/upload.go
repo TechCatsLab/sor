@@ -13,19 +13,16 @@ import (
 	"os"
 	"path"
 
-	_ "github.com/go-sql-driver/mysql"
-
 	"github.com/TechCatsLab/apix/http/server"
 	log "github.com/TechCatsLab/logging/logrus"
 	"github.com/TechCatsLab/sor/base"
 	"github.com/TechCatsLab/sor/base/constants"
 	"github.com/TechCatsLab/sor/upload/mysql"
-
-	"github.com/TechCatsLab/sor/base/filter"
 )
 
 type UploadController struct {
 	*base.Controller
+	BaseURL string
 }
 
 // UploadOne single file upload
@@ -35,27 +32,29 @@ func (u *UploadController) Upload(c *server.Context) error {
 		return c.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
 	}
 
-	userID, err := filter.GetUID(c, u.TokenKey())
+	ctx := &base.Context{c}
+	userID := ctx.UID()
+
 	if userID == constants.InvalidUID {
 		log.Error("userID invalid")
 		return c.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
 	}
 
-	file, header, err := c.Request().FormFile(constants.FileKey)
+	file, header, err := ctx.Request().FormFile(constants.FileKey)
 	defer func() {
 		file.Close()
-		c.Request().MultipartForm.RemoveAll()
+		ctx.Request().MultipartForm.RemoveAll()
 	}()
 	if err != nil {
 		log.Error(err)
-		return c.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
+		return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
 	}
 
 	md5 := md5.New()
 	_, err = io.Copy(md5, file)
 	if err != nil {
 		log.Error(err)
-		return c.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
+		return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
 	}
 
 	MD5Str := hex.EncodeToString(md5.Sum(nil))
@@ -66,12 +65,12 @@ func (u *UploadController) Upload(c *server.Context) error {
 	defer cur.Close()
 	if err != nil {
 		log.Error(err)
-		return c.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
+		return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
 	}
 	_, err = io.Copy(cur, file)
 	if err != nil {
 		log.Error(err)
-		return c.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
+		return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
 	}
 
 	err = mysql.Insert(u.SQLStore(), userID, filePath, MD5Str)
@@ -80,12 +79,12 @@ func (u *UploadController) Upload(c *server.Context) error {
 			filePath, err := mysql.QueryByMD5(u.SQLStore(), MD5Str)
 			if err != nil {
 				log.Error(err)
-				return c.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
+				return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
 			}
-			return c.ServeJSON(respStatusAndData(http.StatusOK, u.BaseUrl()+filePath))
+			return ctx.ServeJSON(respStatusAndData(http.StatusOK, u.BaseURL+filePath))
 		}
 		log.Error(err)
-		return c.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
+		return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
 	}
-	return c.ServeJSON(respStatusAndData(http.StatusOK, u.BaseUrl()+filePath))
+	return ctx.ServeJSON(respStatusAndData(http.StatusOK, u.BaseURL+filePath))
 }

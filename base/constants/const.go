@@ -10,8 +10,6 @@ const (
 	UserID = "id"
 	// InvalidUID - userID invalid
 	InvalidUID = 0
-	//InvalidAdmin - admin invalid
-	InvalidAdmin = false
 
 	// RespKeyStatus - json key 'status'
 	RespKeyStatus = "status"

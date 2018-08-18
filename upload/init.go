@@ -33,12 +33,11 @@ func InitRouter(r *server.Router, db *sql.DB, baseUrl, tokenKey string) {
 	}
 
 	c := &http.UploadController{
-		base.New(db, baseUrl, tokenKey),
+		base.New(db),
+		baseUrl,
 	}
 
 	r.Post("/api/v1/user/upload", c.Upload)
-	r.Post("/api/v1/admin/getbytime", c.QueryByTime)
-	r.Post("/api/v1/admin/getbyuid", c.QueryByUserID)
 }
 
 func checkDir(path ...string) error {
