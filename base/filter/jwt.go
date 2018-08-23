@@ -24,6 +24,10 @@ type JWTFilter struct {
 	token string
 }
 
+func New(token string) *JWTFilter {
+	return &JWTFilter{token:token}
+}
+
 func (f *JWTFilter) Check(ctx *server.Context) bool {
 	c := &base.Context{ctx}
 
@@ -33,7 +37,7 @@ func (f *JWTFilter) Check(ctx *server.Context) bool {
 		return false
 	}
 
-	rawUID := uint(claims[base.CtxKeyUID].(uint))
+	rawUID := uint(claims[base.CtxKeyUID].(float64))
 	c.SetUID(rawUID)
 
 	return true

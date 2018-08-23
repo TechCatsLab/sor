@@ -22,10 +22,11 @@ var (
 func init() {
 	router = server.NewRouter()
 
-	db, err := sql.Open("mysql", "root:111111@/mysql")
+	db, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/upload?charset=utf8mb4&parseTime=True&loc=Local")
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	upload.InitRouter(router, db, "http://127.0.0.1:9573", "token")
+	upload.InitRouter(router, db, "http://127.0.0.1:9573", "TokenHMACKey")
+
 }

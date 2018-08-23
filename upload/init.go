@@ -15,13 +15,13 @@ import (
 	"github.com/TechCatsLab/sor/base/constants"
 	"github.com/TechCatsLab/sor/upload/http"
 	"github.com/TechCatsLab/sor/upload/mysql"
+	"github.com/TechCatsLab/sor/base/filter"
 )
 
 func InitRouter(r *server.Router, db *sql.DB, baseUrl, tokenKey string) {
 	if r == nil {
 		log.Fatal("[InitRouter]: server is nil")
 	}
-	//s.AttachMiddleware(middleware.NegroniJwtHandler(tokenKey, Skipper, nil, JwtErrHandler))
 
 	err := mysql.Create(db)
 	if err != nil {
@@ -37,7 +37,9 @@ func InitRouter(r *server.Router, db *sql.DB, baseUrl, tokenKey string) {
 		baseUrl,
 	}
 
-	r.Post("/api/v1/user/upload", c.Upload)
+	jwt := filter.New(tokenKey)
+
+	r.Post("/api/v1/user/upload", c.Upload, jwt.Check)
 }
 
 func checkDir(path ...string) error {

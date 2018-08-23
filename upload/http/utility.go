@@ -6,6 +6,11 @@
 package http
 
 import (
+	"io"
+	"os"
+	"crypto/md5"
+	"encoding/hex"
+
 	"github.com/TechCatsLab/sor/base/constants"
 )
 
@@ -39,4 +44,26 @@ func classifyBySuffix(suffix string) string {
 		return dir
 	}
 	return constants.OtherDir
+}
+
+func MD5(file io.Reader) (string, error) {
+	sum := md5.New()
+	_, err := io.Copy(sum, file)
+	if err != nil {
+		return "", err
+	}
+
+	MD5Str := hex.EncodeToString(sum.Sum(nil))
+	return MD5Str, nil
+}
+
+func CopyFile(path string, file io.Reader) error {
+	cur, err := os.Create(path)
+	defer cur.Close()
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(cur, file)
+	return err
 }

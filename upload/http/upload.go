@@ -6,18 +6,14 @@
 package http
 
 import (
-	"crypto/md5"
-	"encoding/hex"
-	"io"
 	"net/http"
-	"os"
-	"path"
 
 	"github.com/TechCatsLab/apix/http/server"
 	log "github.com/TechCatsLab/logging/logrus"
 	"github.com/TechCatsLab/sor/base"
 	"github.com/TechCatsLab/sor/base/constants"
 	"github.com/TechCatsLab/sor/upload/mysql"
+	"path"
 )
 
 type UploadController struct {
@@ -50,24 +46,26 @@ func (u *UploadController) Upload(c *server.Context) error {
 		return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
 	}
 
-	md5 := md5.New()
-	_, err = io.Copy(md5, file)
+	MD5Str, err := MD5(file)
 	if err != nil {
 		log.Error(err)
 		return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
 	}
 
-	MD5Str := hex.EncodeToString(md5.Sum(nil))
+	filePath, err := mysql.QueryByMD5(u.SQLStore(), MD5Str)
+	if err == nil {
+		return ctx.ServeJSON(respStatusAndData(http.StatusOK, u.BaseURL+filePath))
+	}
+
+	if err != mysql.ErrNoRows {
+		log.Error(err)
+		return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
+	}
 
 	fileSuffix := path.Ext(header.Filename)
-	filePath := constants.FileUploadDir + "/" + classifyBySuffix(fileSuffix) + "/" + MD5Str + fileSuffix
-	cur, err := os.Create(filePath)
-	defer cur.Close()
-	if err != nil {
-		log.Error(err)
-		return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
-	}
-	_, err = io.Copy(cur, file)
+	filePath = constants.FileUploadDir + "/" + classifyBySuffix(fileSuffix) + "/" + MD5Str + fileSuffix
+
+	err = CopyFile(filePath, file)
 	if err != nil {
 		log.Error(err)
 		return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
@@ -75,14 +73,6 @@ func (u *UploadController) Upload(c *server.Context) error {
 
 	err = mysql.Insert(u.SQLStore(), userID, filePath, MD5Str)
 	if err != nil {
-		if err.Error() == "Error 1062: "+"Duplicate entry "+"'"+MD5Str+"'"+" for key 'PRIMARY'" {
-			filePath, err := mysql.QueryByMD5(u.SQLStore(), MD5Str)
-			if err != nil {
-				log.Error(err)
-				return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
-			}
-			return ctx.ServeJSON(respStatusAndData(http.StatusOK, u.BaseURL+filePath))
-		}
 		log.Error(err)
 		return ctx.ServeJSON(respStatusAndData(http.StatusBadRequest, nil))
 	}

@@ -6,9 +6,14 @@
 package main
 
 import (
+	"time"
+	"fmt"
+
 	"github.com/TechCatsLab/apix/http/server"
 	"github.com/TechCatsLab/apix/http/server/middleware"
 	"github.com/TechCatsLab/logging/logrus"
+	jwtgo "github.com/dgrijalva/jwt-go"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
@@ -21,9 +26,21 @@ func main() {
 	ep.AttachMiddleware(middleware.NegroniJwtHandler("TokenHMACKey", nil, nil, nil))
 
 	if err := ep.Start(router.Handler()); err != nil {
-		logrus.Error(err)
-		return
+		logrus.Fatal(err)
 	}
 
+	t, err := NewToken(1, true)
+	fmt.Println(t, err)
+
 	ep.Wait()
+}
+
+func NewToken(userID uint, admin bool) (string, error) {
+	claims := make(jwtgo.MapClaims)
+	claims["uid"] = userID
+	claims["admin"] = admin
+	claims["exp"] = time.Now().Add(time.Hour * 480).Unix()
+	token := jwtgo.NewWithClaims(jwtgo.SigningMethodHS256, claims)
+
+	return token.SignedString([]byte("TokenHMACKey"))
 }
