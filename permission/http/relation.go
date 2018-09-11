@@ -67,7 +67,3 @@ func (ph *PermissionHandler) RemoveRelation(c *server.Context) error {
 	}
 	return c.ServeJSON(base.RespStatusAndData(http.StatusOK, nil))
 }
-
-func (ph *PermissionHandler) AssociatedRoleMap(c *server.Context) error {
-
-}
