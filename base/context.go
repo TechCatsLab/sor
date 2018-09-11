@@ -18,17 +18,17 @@ type Context struct {
 	*server.Context
 }
 
-func (c *Context) SetUID(id uint) {
+func (c *Context) SetUID(id uint32) {
 	c.Set(CtxKeyUID, id)
 }
 
-func (c *Context) UID() uint {
+func (c *Context) UID() uint32 {
 	v := c.Get(CtxKeyUID)
 	if v == nil {
 		return constants.InvalidUID
 	}
 
-	if i, ok := v.(uint); ok {
+	if i, ok := v.(uint32); ok {
 		return i
 	}
 

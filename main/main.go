@@ -14,6 +14,7 @@ import (
 	"github.com/TechCatsLab/logging/logrus"
 	jwtgo "github.com/dgrijalva/jwt-go"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/TechCatsLab/sor/base/filter"
 )
 
 func main() {
@@ -23,24 +24,24 @@ func main() {
 
 	ep := server.NewEntrypoint(serverConfig, nil)
 	ep.AttachMiddleware(middleware.NegroniRecoverHandler())
-	ep.AttachMiddleware(middleware.NegroniJwtHandler("TokenHMACKey", nil, nil, nil))
+	//ep.AttachMiddleware(middleware.NegroniJwtHandler("UserTokenKey", nil, nil, nil))
+	ep.AttachMiddleware(middleware.NegroniJwtHandler("AdminTokenKey", filter.Skipper, nil, nil))
 
 	if err := ep.Start(router.Handler()); err != nil {
 		logrus.Fatal(err)
 	}
 
-	t, err := NewToken(1, true)
-	fmt.Println(t, err)
+	user, err := NewUserToken(1)
+	fmt.Println("user: ", user, err)
 
 	ep.Wait()
 }
 
-func NewToken(userID uint, admin bool) (string, error) {
+func NewUserToken(userID uint) (string, error) {
 	claims := make(jwtgo.MapClaims)
 	claims["uid"] = userID
-	claims["admin"] = admin
 	claims["exp"] = time.Now().Add(time.Hour * 480).Unix()
 	token := jwtgo.NewWithClaims(jwtgo.SigningMethodHS256, claims)
 
-	return token.SignedString([]byte("TokenHMACKey"))
+	return token.SignedString([]byte("UserTokenKey"))
 }

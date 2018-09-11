@@ -31,13 +31,6 @@ func filePath() map[string]string {
 	return fileMap
 }
 
-func respStatusAndData(statusCode int, data interface{}) map[string]interface{} {
-	if data == nil {
-		return map[string]interface{}{constants.RespKeyStatus: statusCode}
-	}
-	return map[string]interface{}{constants.RespKeyStatus: statusCode, constants.RespKeyData: data}
-}
-
 func classifyBySuffix(suffix string) string {
 
 	if dir := fileDir[suffix]; dir != "" {

@@ -13,6 +13,7 @@ import (
 	"github.com/TechCatsLab/apix/http/server"
 	"github.com/TechCatsLab/logging/logrus"
 	"github.com/TechCatsLab/sor/upload"
+	"github.com/TechCatsLab/sor/admin"
 )
 
 var (
@@ -22,11 +23,15 @@ var (
 func init() {
 	router = server.NewRouter()
 
-	db, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/upload?charset=utf8mb4&parseTime=True&loc=Local")
+	uploadDB, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/upload?charset=utf8mb4&parseTime=True&loc=Local")
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	upload.InitRouter(router, db, "http://127.0.0.1:9573", "TokenHMACKey")
-
+	upload.InitRouter(router, uploadDB, "http://127.0.0.1:9573", "UserTokenKey")
+	adminDB, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/?charset=utf8mb4&parseTime=True&loc=Local")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	admin.InitAdminRouter(router, adminDB, "AdminTokenKey")
 }

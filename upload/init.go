@@ -23,7 +23,7 @@ func InitRouter(r *server.Router, db *sql.DB, baseUrl, tokenKey string) {
 		log.Fatal("[InitRouter]: server is nil")
 	}
 
-	err := mysql.Create(db)
+	err := mysql.CreateTable(db)
 	if err != nil {
 		log.Fatal(err)
 	}

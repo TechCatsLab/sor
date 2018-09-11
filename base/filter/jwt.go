@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
+	"database/sql"
 
 	"github.com/TechCatsLab/apix/http/server"
 	log "github.com/TechCatsLab/logging/logrus"
@@ -18,14 +20,30 @@ import (
 
 var (
 	errInvalidToken = errors.New("jwt: invalid token")
+
+	URLMap map[string]struct{}
 )
 
 type JWTFilter struct {
 	token string
+	db *sql.DB
+}
+
+func init() {
+	URLMap = make(map[string]struct{})
 }
 
 func New(token string) *JWTFilter {
 	return &JWTFilter{token:token}
+}
+
+func NewAdminToken(userID uint32, tokenKey string) (string, error) {
+	claims := make(jwtgo.MapClaims)
+	claims["uid"] = userID
+	claims["exp"] = time.Now().Add(time.Hour * 480).Unix()
+	token := jwtgo.NewWithClaims(jwtgo.SigningMethodHS256, claims)
+
+	return token.SignedString([]byte(tokenKey))
 }
 
 func (f *JWTFilter) Check(ctx *server.Context) bool {
@@ -37,8 +55,10 @@ func (f *JWTFilter) Check(ctx *server.Context) bool {
 		return false
 	}
 
-	rawUID := uint(claims[base.CtxKeyUID].(float64))
+	rawUID := uint32(claims[base.CtxKeyUID].(float64))
 	c.SetUID(rawUID)
+
+
 
 	return true
 }
@@ -74,4 +94,12 @@ func (f *JWTFilter) checkJWT(ctx *base.Context) (jwtgo.MapClaims, error) {
 	}
 
 	return claims, nil
+}
+
+func Skipper(path string) bool {
+	if _, ok := URLMap[path]; ok {
+		return true
+	}
+
+	return false
 }
