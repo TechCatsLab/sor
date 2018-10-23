@@ -17,6 +17,8 @@ const (
 	RespKeyStatus = "status"
 	// RespKeyData - json key 'data'
 	RespKeyData = "data"
+	// RespKeyID - json key 'ID'
+	RespKeyID = "ID"
 
 	// fileKry - key of the file
 	FileKey = "file"
@@ -30,4 +32,11 @@ const (
 	VideoDir = "video"
 	// OtherDir - files other than video and picture
 	OtherDir = "other"
+
+	//Category 目录的错误代码
+	ErrSucceed                = 0
+	ErrCreateInMysql          = 233
+	ErrOprationInMysql        = 234
+	ErrInvalidParam           = 421
+	ErrListChirdrenByParentID = 777
 )
