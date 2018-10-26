@@ -6,11 +6,11 @@
 package filter
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
-	"database/sql"
 
 	"github.com/TechCatsLab/apix/http/server"
 	log "github.com/TechCatsLab/logging/logrus"
@@ -26,7 +26,7 @@ var (
 
 type JWTFilter struct {
 	token string
-	db *sql.DB
+	db    *sql.DB
 }
 
 func init() {
@@ -34,7 +34,7 @@ func init() {
 }
 
 func New(token string) *JWTFilter {
-	return &JWTFilter{token:token}
+	return &JWTFilter{token: token}
 }
 
 func NewAdminToken(userID uint32, tokenKey string) (string, error) {
@@ -57,8 +57,6 @@ func (f *JWTFilter) Check(ctx *server.Context) bool {
 
 	rawUID := uint32(claims[base.CtxKeyUID].(float64))
 	c.SetUID(rawUID)
-
-
 
 	return true
 }

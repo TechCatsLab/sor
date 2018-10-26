@@ -8,9 +8,9 @@ package main
 import (
 	"database/sql"
 
-	"github.com/TechCatsLab/sor/category"
+	"github.com/TechCatsLab/sor/banner"
 
-	"github.com/TechCatsLab/sor/category/config"
+	"github.com/TechCatsLab/sor/banner/config"
 
 	_ "github.com/go-sql-driver/mysql"
 
@@ -60,7 +60,7 @@ func init() {
 	smservice.Register(router, smserviceDB, c)
 	*/
 	//这是目录的测试
-	CategoryDB, err := sql.Open("mysql", "root:yhyddr119216@tcp(127.0.0.1:3306)/?parseTime=true")
+	/*CategoryDB, err := sql.Open("mysql", "root:yhyddr119216@tcp(127.0.0.1:3306)/?parseTime=true")
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -69,5 +69,16 @@ func init() {
 		CategoryDB:    "mall",
 		CategoryTable: "table",
 	}
-	category.Register(router, CategoryDB, cc)
+	category.Register(router, CategoryDB, cc)*/
+	BannerDB, err := sql.Open("mysql", "root:yhyddr119216@tcp(127.0.0.1:3306)/?parseTime=true")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	ccc := &config.Config{
+		BannerDB:    "xixi",
+		BannerTable: "haha",
+	}
+
+	banner.Register(router, BannerDB, ccc)
 }

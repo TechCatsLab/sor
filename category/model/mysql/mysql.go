@@ -78,7 +78,7 @@ func ChangeCategoryName(db *sql.DB, change string, category uint, name string) e
 }
 
 //显示一个父亲的所有孩子
-func LisitChirldrenByParentId(db *sql.DB, menu string, parentId uint) ([]*Category, error) {
+func LisitChirldrenByParentId(db *sql.DB, Lisit string, parentId uint) ([]*Category, error) {
 	var (
 		categoryId uint
 		name       string
@@ -88,7 +88,7 @@ func LisitChirldrenByParentId(db *sql.DB, menu string, parentId uint) ([]*Catego
 		categorys []*Category
 	)
 
-	rows, err := db.Query(menu, parentId)
+	rows, err := db.Query(Lisit, parentId)
 	if err != nil {
 		return nil, err
 	}
