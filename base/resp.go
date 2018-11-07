@@ -17,7 +17,6 @@ func RespStatusAndData(statusCode int, data interface{}) map[string]interface{} 
 	return map[string]interface{}{constants.RespKeyStatus: statusCode, constants.RespKeyData: data}
 }
 
-//做的resp加进来，因为还不懂学长写的response
 func WriteStatusAndIDJSON(ctx *server.Context, status int, id interface{}) error {
 	return ctx.ServeJSON(map[string]interface{}{
 		constants.RespKeyStatus: status,

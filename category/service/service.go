@@ -26,7 +26,7 @@ func NewCategoryService(c *config.Config, db *sql.DB) *TransactService {
 				createTime DATETIME DEFAULT current_timestamp COMMENT '创建时间',
 				PRIMARY KEY (categoryId),
 				INDEX(parentId)
-			)ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8`,
+			)ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4`,
 			`INSERT INTO ` + c.CategoryDB + `.` + c.CategoryTable + `(parentId,name) VALUES (?,?)`,
 			`UPDATE ` + c.CategoryDB + `.` + c.CategoryTable + `SET status = ? WHERE categoryId = ? LIMIT 1`,
 			`UPDATE ` + c.CategoryDB + `.` + c.CategoryTable + `SET name = ? WHERE categoryId = ? LIMIT 1`,
@@ -64,21 +64,4 @@ func (ts *TransactService) LisitChirldrenByParentId(parentId uint) ([]*mysql.Cat
 	}
 
 	return categorys, nil
-}
-
-var product = []string{
-	`CREATE DATABASE IF NOT EXISTS mall`,
-	`CREATE TABLE IF NOT EXISTS mall.product(
-		productId INT(11) NOT NULL AUTO_INCREMENT COMMENT '商品id',
-		categoryId INT(11) NOT NULL COMMENT '分类id，对应分类表的主键',
-		name VARCHAR(100) NOT NULL COMMENT '商品名称',
-		mainImage VARCHAR(500) NOT NULL COMMENT '商品图片，相对地址',
-		detail TEXT COMMENT '商品详情',
-		price DECIMAL(20,2) NOT NULL COMMENT '价格，单位-元保留两位小数',
-		stock INT(11) NOT NULL COMMENT '库存数量',
-		status TINYINT(1) NOT NULL COMMENT '状态，1-在售 2-下架 3-删除',
-		createTime DATETIME DEFAULT NULL COMMENT '创建时间',
-		updateTime DATATIME DEFAULT NULL COMMENT '更新时间',
-		PRIMARY KEY (productId)
-	)ENGINE = InnoDB AUTO_INCREMENT= 2 DEFAULT CHARSET=utf8`,
 }

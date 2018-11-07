@@ -8,9 +8,9 @@ package main
 import (
 	"database/sql"
 
-	"github.com/TechCatsLab/sor/banner"
+	"github.com/TechCatsLab/sor/order"
 
-	"github.com/TechCatsLab/sor/banner/config"
+	"github.com/TechCatsLab/sor/order/config"
 
 	_ "github.com/go-sql-driver/mysql"
 
@@ -27,9 +27,13 @@ type funcv struct{}
 func (v funcv) OnVerifySucceed(a, b string) {}
 func (v funcv) OnVerifyFailed(a, b string)  {}
 
+type funcstock struct{}
+
+func (s funcstock) ModifyProductStock(a string, b int) {}
+
 func init() {
 	router = server.NewRouter()
-	//之前学长自己做的测试，upload和admin文件夹
+	//之前的测试，upload和admin文件夹
 	/*uploadDB, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/upload?charset=utf8mb4&parseTime=True&loc=Local")
 	if err != nil {
 		logrus.Fatal(err)
@@ -70,7 +74,7 @@ func init() {
 		CategoryTable: "table",
 	}
 	category.Register(router, CategoryDB, cc)*/
-	BannerDB, err := sql.Open("mysql", "root:yhyddr119216@tcp(127.0.0.1:3306)/?parseTime=true")
+	/*BannerDB, err := sql.Open("mysql", "root:yhyddr119216@tcp(127.0.0.1:3306)/?parseTime=true")
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -81,4 +85,18 @@ func init() {
 	}
 
 	banner.Register(router, BannerDB, ccc)
+	*/
+	OrderDB, err := sql.Open("mysql", "root:yhyddr119216@tcp(127.0.0.1:3306)/?parseTime=true")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	var s funcstock
+	cccc := &config.Config{
+		OrderDB:     "bill",
+		OrderTable:  "order",
+		ItemTable:   "item",
+		ModifyStock: s,
+	}
+
+	order.Register(router, OrderDB, cccc)
 }
