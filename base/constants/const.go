@@ -33,10 +33,21 @@ const (
 	// OtherDir - files other than video and picture
 	OtherDir = "other"
 
-	//Category 目录的错误代码
+	//module ErrCode
 	ErrSucceed                = 0
 	ErrCreateInMysql          = 233
 	ErrOprationInMysql        = 234
 	ErrInvalidParam           = 421
 	ErrListChirdrenByParentID = 777
+
+	//Status belong to Order
+	OrderUnfinished = 0
+	OrderFinished   = 1
+	OrderPaid       = 2
+	OrderConsign    = 3
+	OrderCanceled   = 4
+
+	//PayWay belong to Order
+	Alipay = 0
+	Wechat = 1
 )

@@ -17,62 +17,58 @@ type OrderService struct {
 }
 
 func NewOrderService(c *config.Config, db *sql.DB) *OrderService {
+	store := c.OrderDB + "." + c.OrderTable
 	os := &OrderService{
 		db: db,
 		SQLS: []string{
 			`CREATE DATABASE IF NOT EXISTS ` + c.OrderDB,
 			`CREATE TABLE IF NOT EXISTS ` + c.OrderDB + `.` + c.OrderTable + `(
-				orderId VARCHAR(50) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '订单id', 
-				payment VARCHAR(50) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '实付金额。精确到2位小数;单位:元。如:200.07，表示:200元7分',
-				paymentType INT(2) DEFAULT NULL COMMENT '支付平台',
-				promotion VARCHAR(50) DEFAULT NULL COMMENT '促销',
-				postFee VARCHAR(50) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '邮费。精确到2位小数;单位:元。如:200.07，表示:200元7分',  
-				status INT(10) DEFAULT '1' COMMENT '状态：1、未付款，2、已付款，3、未发货，4、已发货，5、交易成功，6、交易关闭',
-				createTime DATETIME DEFAULT NULL COMMENT '订单创建时间',
-				payTime DATETIME DEFAULT NULL COMMENT '付款时间',
-				consignTime DATETIME DEFAULT NULL COMMENT '发货时间',
-				closeTime DATETIME DEFAULT NULL COMMENT '交易关闭时间',
-				endTime DATETIME DEFAULT NULL COMMENT '交易完成时间',
-				shippingName VARCHAR(20) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '物流名称',
-				shippingCode VARCHAR(20) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '物流单号',
-				userId BIGINT(20) DEFAULT NULL COMMENT '用户id',
-				UNIQUE KEY orderId (orderId) USING BTREE,
-				KEY createTime (createTime),
-				KEY status (status),
-				KEY paymentType (paymentType)
-			)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='订单基本信息表'`,
+				id INT UNSIGNED NOT NULL AUTO_INCREMENT ,
+				orderCode VARCHAR(50) NOT NULL ,
+				shipCode VARCHAR(50) NOT NULL DEFAULT 'wu',
+				userID BIGINT UNSIGNED NOT NULL ,
+				addressID VARCHAR(20) NOT NULL ,
+				totalPrice INT UNSIGNED NOT NULL ,
+				payWay TINYINT UNSIGNED DEFAULT '0' ,
+				promotion INT UNSIGNED DEFAULT '0',
+				freight INT UNSIGNED NOT NULL,
+				status TINYINT UNSIGNED DEFAULT '0',
+				created DATETIME DEFAULT NOW() ,
+				closed DATETIME DEFAULT '8012-12-31 00:00:00' ,
+				updated DATETIME DEFAULT NOW() ,
+				PRIMARY KEY (id) ,
+				UNIQUE KEY orderCode (orderCode) USING BTREE ,
+				KEY created (created) ,
+				KEY updated (updated) ,
+				KEY status (status) ,
+				KEY payWay (payWay)
+			)ENGINE=InnoDB AUTO_INCREMENT = 10000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='order info'`,
 			`CREATE TABLE IF NOT EXISTS ` + c.OrderDB + `.` + c.ItemTable + `(
-				itemId VARCHAR(50) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '商品id',
-				orderId VARCHAR(50) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '订单id',
-				num INT(10) DEFAULT NULL COMMENT '商品购买数量',
-				price VARCHAR(50) DEFAULT NULL COMMENT '商品单价',
-				total VARCHAR(50) DEFAULT NULL COMMENT '商品总金额',
-				KEY orderId (orderId)
-			)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='订单商品表'`,
-			`INSERT INTO ` + c.OrderDB + `.` + c.OrderTable + ` (orderId,payment,promotion,postFee,createTime,endTime,userId) VALUES(?,?,?,?,?,?,?)`,
-			`INSERT INTO ` + c.OrderDB + `.` + c.ItemTable + ` (itemId,orderId,num,price,total) VALUES(?,?,?,?,?)`,
-			`SELECT * FROM ` + c.OrderDB + `.` + c.OrderTable + ` WHERE orderId = ? LIMIT 1 `,
-			`SELECT * FROM ` + c.OrderDB + `.` + c.OrderTable + ` WHERE orderId = ? `,
-			`SELECT * FROM ` + c.OrderDB + `.` + c.ItemTable + ` WHERE orderId = ?  `,
-			`UPDATE ` + c.OrderDB + `.` + c.OrderTable + ` SET payTime = ? WHERE orderId = ? `,
-			`UPDATE ` + c.OrderDB + `.` + c.OrderTable + ` SET consignTime = ? WHERE orderId = ? `,
-			`UPDATE ` + c.OrderDB + `.` + c.OrderTable + ` SET endTime = ? WHERE orderId = ? `,
-			`UPDATE ` + c.OrderDB + `.` + c.OrderTable + ` SET status = ? WHERE orderId = ? `,
-			`UPDATE ` + c.OrderDB + `.` + c.OrderTable + ` SET shippingName = ? , shippingCode = ? WHERE orderId = ? `,
-			`DELETE FROM ` + c.OrderDB + `.` + c.OrderTable + ` WHERE orderId = ? LIMIT 1 LOCK IN SHARE MODE`,
-			`DELETE FROM ` + c.OrderDB + `.` + c.ItemTable + ` WHERE orderId = ? LOCK IN SHARE MODE`,
-			`UPDATE ` + c.OrderDB + `.` + c.OrderTable + ` SET paymentType = ? WHERE orderId = ? `,
+				id INT UNSIGNED NOT NULL AUTO_INCREMENT ,
+				productID INT UNSIGNED NOT NULL ,
+				orderID VARCHAR(50) NOT NULL ,
+				count INT UNSIGNED NOT NULL ,
+				price INT UNSIGNED NOT NULL ,
+				discount TINYINT UNSIGNED NOT NULL ,
+				size VARCHAR(50) NOT NULL ,
+				color VARCHAR(50) NOT NULL ,
+				PRIMARY KEY (id) ,
+				KEY orderID (orderID)
+			)ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='orderitem info'`,
+			`INSERT INTO ` + store + ` (orderCode,userID,addressID,totalPrice,promotion,freight,closed) VALUES(?,?,?,?,?,?,?)`,
+			`INSERT INTO ` + store +  ` (productID,orderID,count,price,discount,size,color) VALUES(?,?,?,?,?,?,?)`,
+			`SELECT * FROM ` + store + ` WHERE userID = ? LOCK IN SHARE MODE`,
+			`SELECT id FROM ` + store +  ` WHERE orderCode = ? LOCK IN SHARE MODE`,
+			`SELECT * FROM `+ store +   `WHERE id = ? LOCK IN SHARE MODE`,
+			`SELECT * FROM ` + store + `WHERE orderID = ? LOCK IN SHARE MODE`,
+			`UPDATE ` + store + ` SET updated = ? WHERE id = ? LIMIT 1`,
+			`UPDATE ` + store + ` SET status = ? WHERE id = ? LIMIT 1 `,
+			`UPDATE `+ store + ` SET shipCode = ? WHERE id = ? LIMIT 1 `,
+			`UPDATE ` + store +  ` SET payWay = ? WHERE id = ? LIMIT 1 `,
 		},
 		Cnf: c,
 	}
 	return os
-}
-
-type Item struct {
-	ItemId string `json:"itemid"`
-	Num    int    `json:"num"`
-	Price  string `json:"price"`
-	Total  string `json:"total"`
 }
 
 func (os *OrderService) CreateDB() error {
@@ -87,51 +83,69 @@ func (os *OrderService) CreateItemTable() error {
 	return mysql.CreateTable(os.db, os.SQLS[2])
 }
 
-func (os *OrderService) Insert(order mysql.Order, items []Item) (string, error) {
+func (os *OrderService) Insert(order mysql.Order, items []mysql.Item) (uint32, error) {
+	var (
+		err error
+	)
+
+	err = os.Cnf.User.UserCheck(order.UserID)
+	if err != nil {
+		return 0, err
+	}
+
 	tx, err := os.db.Begin()
 	if err != nil {
-		return "0", err
+		return 0, err
 	}
-	defer tx.Rollback()
 
-	result, err := tx.Exec(os.SQLS[3], order.OrderId, order.Payment, order.Promotion, order.PostFee, order.CreateTime, order.CloseTime, order.UserID)
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		} else {
+			tx.Commit()
+		}
+	}()
+
+	order.Closed = order.Created.Add(time.Duration(os.Cnf.ClosedInterval * int(time.Hour)))
+
+	result, err := tx.Exec(os.SQLS[3], order.OrderCode, order.UserID, order.AddressID, order.TotalPrice, order.Promotion, order.Freight, order.Closed)
+
 	if err != nil {
-		return "0", err
+		return 0, err
 	}
 
 	if affected, _ := result.RowsAffected(); affected == 0 {
-		return "0", errors.New("insert order: insert affected 0 rows")
+		return 0, errors.New("[insert order] : insert order affected 0 rows")
 	}
+
+	Id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	order.ID = uint32(Id)
 
 	for _, x := range items {
-		result, err := tx.Exec(os.SQLS[4], x.ItemId, order.OrderId, x.Num, x.Price, x.Total)
+		result, err := tx.Exec(os.SQLS[4], x.ProductId, order.ID, x.Count, x.Price, x.Discount, x.Size, x.Color)
 		if err != nil {
-			return "0", err
+			return 0, err
 		}
+
 		if affected, _ := result.RowsAffected(); affected == 0 {
-			return "0", errors.New("insert item: insert affected 0 rows")
+			return 0, errors.New("insert item: insert affected 0 rows")
+		}
+	}
+	for _, x := range items {
+		err = os.Cnf.Stock.ModifyProductStock(x.ProductId, int(x.Count))
+		if err != nil {
+			return 0, err
 		}
 	}
 
-	if err = tx.Commit(); err != nil {
-		return "0", err
-	}
-
-	return order.OrderId, nil
-
+	return order.ID, nil
 }
 
-func (os *OrderService) OrderInfo(orderid string) (*mysql.Order, error) {
-	order, err := mysql.SelectByOrderKey(os.db, os.SQLS[5], orderid)
-	if err != nil {
-		return nil, err
-	}
-
-	return order, nil
-}
-
-func (os *OrderService) LisitOrderByUserId(userid int64) ([]*mysql.Order, error) {
-	orders, err := mysql.LisitOrderByUserId(os.db, os.SQLS[6], userid)
+func (os *OrderService) LisitOrderByUserId(userid uint64) ([]*mysql.Order, error) {
+	orders, err := mysql.LisitOrderByUserId(os.db, os.SQLS[5], userid)
 	if err != nil {
 		return nil, err
 	}
@@ -139,34 +153,40 @@ func (os *OrderService) LisitOrderByUserId(userid int64) ([]*mysql.Order, error)
 	return orders, nil
 }
 
-func (os *OrderService) LisitItemByOrderId(orderid string) ([]*mysql.Item, error) {
-	items, err := mysql.LisitItemByOrderId(os.db, os.SQLS[7], orderid)
+func (os *OrderService) OrderIDByOrderCode(ordercode string) (uint32, error) {
+	return mysql.OrderIDByOrderCode(os.db, os.SQLS[6], ordercode)
+}
+
+func (os *OrderService) OrderInfo(orderid uint32) (*mysql.Order, error) {
+	order, err := mysql.SelectByOrderKey(os.db, os.SQLS[7], orderid)
+	if err != nil {
+		return nil, err
+	}
+
+	return order, nil
+}
+
+func (os *OrderService) LisitItemByOrderId(orderid uint32) ([]*mysql.Item, error) {
+	items, err := mysql.LisitItemByOrderId(os.db, os.SQLS[8], orderid)
 	if err != nil {
 		return nil, err
 	}
 
 	return items, nil
 }
-func (os *OrderService) ChangePayTime(orderid string, paytime time.Time) error {
-	return mysql.UpdateTimeByOrderKey(os.db, os.SQLS[8], orderid, paytime)
+
+func (os *OrderService) UpdateTime(orderid uint32, updated time.Time) (uint32, error) {
+	return mysql.UpdateTimeByOrderKey(os.db, os.SQLS[9], orderid, updated)
 }
 
-func (os *OrderService) ChangeConsignTime(orderid string, paytime time.Time) error {
-	return mysql.UpdateTimeByOrderKey(os.db, os.SQLS[9], orderid, paytime)
+func (os *OrderService) UpdateStatus(orderid uint32, status uint8) (uint32, error) {
+	return mysql.UpdateStatusByOrderKey(os.db, os.SQLS[10], orderid, status)
 }
 
-func (os *OrderService) ChangeEndTime(orderid string, paytime time.Time) error {
-	return mysql.UpdateTimeByOrderKey(os.db, os.SQLS[10], orderid, paytime)
+func (os *OrderService) UpdateShip(orderid uint32, shippingcode string) (uint32, error) {
+	return mysql.UpdateShipByOrderKey(os.db, os.SQLS[11], orderid, shippingcode)
 }
 
-func (os *OrderService) ChangeStatus(orderid string, status int) error {
-	return mysql.UpdateStatusByOrderKey(os.db, os.SQLS[11], orderid, status)
-}
-
-func (os *OrderService) ChangeShipp(orderid string, shippingname, shippingcode string) error {
-	return mysql.UpdateShipByOrderKey(os.db, os.SQLS[12], orderid, shippingname, shippingcode)
-}
-
-func (os *OrderService) ChangePaymentType(orderid string, paymentType int) error {
-	return mysql.UpdatePaymentTypeByOrderKey(os.db, os.SQLS[13], orderid, paymentType)
+func (os *OrderService) UpdatePayWay(orderid uint32, payWay uint8) (uint32, error) {
+	return mysql.UpdatePayWayByOrderKey(os.db, os.SQLS[12], orderid, payWay)
 }

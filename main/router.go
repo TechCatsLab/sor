@@ -28,9 +28,10 @@ func (v funcv) OnVerifySucceed(a, b string) {}
 func (v funcv) OnVerifyFailed(a, b string)  {}
 
 type funcstock struct{}
+type funcUser struct{}
 
-func (s funcstock) ModifyProductStock(a string, b int) {}
-
+func (s funcstock) ModifyProductStock(a uint32, b int) error { return nil }
+func (u funcUser) UserCheck(userid uint64) error             { return nil }
 func init() {
 	router = server.NewRouter()
 	//之前的测试，upload和admin文件夹
@@ -86,16 +87,24 @@ func init() {
 
 	banner.Register(router, BannerDB, ccc)
 	*/
-	OrderDB, err := sql.Open("mysql", "root:yhyddr119216@tcp(127.0.0.1:3306)/?parseTime=true")
+
+	OrderDB, err := sql.Open("mysql", "root:119216@tcp(127.0.0.1:3306)/?parseTime=true")
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	var s funcstock
+	var (
+		s funcstock
+		u funcUser
+	)
+
 	cccc := &config.Config{
-		OrderDB:     "bill",
-		OrderTable:  "order",
-		ItemTable:   "item",
-		ModifyStock: s,
+		OrderDB:    "bill",
+		OrderTable: "order",
+		ItemTable:  "item",
+		Stock:      s,
+		User:       u,
+
+		ClosedInterval: 24,
 	}
 
 	order.Register(router, OrderDB, cccc)
