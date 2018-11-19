@@ -45,7 +45,7 @@ func (ctl *Controller) Insert(c *server.Context) error {
 			UserID     uint64 `json:"userid"`
 			AddressID  string `json:"addressid"`
 			TotalPrice uint32 `json:"totalprice"`
-			Promotion  uint32 `json:"promotion"`
+			Promotion  string `json:"promotion"`
 			Freight    uint32 `json:"freight"`
 
 			Items []mysql.Item `json:"items"`
@@ -56,20 +56,24 @@ func (ctl *Controller) Insert(c *server.Context) error {
 		}
 		err error
 	)
-
 	if err := c.JSONBody(&req); err != nil {
+		logrus.Error(err)
+		return c.ServeJSON(base.RespStatusAndData(constants.ErrInvalidParam, nil))
+	}
+	promotion, err := strconv.ParseBool(req.Promotion)
+	if err != nil {
 		logrus.Error(err)
 		return c.ServeJSON(base.RespStatusAndData(constants.ErrInvalidParam, nil))
 	}
 
 	times := time.Now()
-
 	rep.ordercode = strconv.Itoa(times.Year()) + strconv.Itoa(int(times.Month())) + strconv.Itoa(times.Day()) + strconv.Itoa(times.Hour()) + strconv.Itoa(times.Minute()) + strconv.Itoa(times.Second()) + strconv.Itoa(int(req.UserID))
 	order := mysql.Order{
 		OrderCode:  rep.ordercode,
 		UserID:     req.UserID,
 		AddressID:  req.AddressID,
 		TotalPrice: req.TotalPrice,
+		Promotion:  promotion,
 		Freight:    req.Freight,
 		Created:    times,
 	}
@@ -79,71 +83,14 @@ func (ctl *Controller) Insert(c *server.Context) error {
 		logrus.Error(err)
 		return c.ServeJSON(base.RespStatusAndData(constants.ErrCreateInMysql, nil))
 	}
-
 	return c.ServeJSON(base.RespStatusAndIDCODEData(constants.ErrSucceed, rep.orderid, rep.ordercode))
 }
 
-func (ctl *Controller) OrderInfoByOrderID(c *server.Context) error {
-	var (
-		req struct {
-			OrderId uint32 `json:"orderid"`
-		}
-		rep struct {
-			order *mysql.Order
-			items []*mysql.Item
-		}
-		err error
-	)
-
-	if err := c.JSONBody(&req); err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrInvalidParam, nil))
-	}
-
-	rep.order, err = ctl.service.OrderInfo(req.OrderId)
-	if err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-	}
-
-	rep.items, err = ctl.service.LisitItemByOrderId(rep.order.ID)
-	if err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-	}
-
-	return c.ServeJSON(base.RespStatusAndTwoData(constants.ErrSucceed, rep.order, rep.items))
-
-}
-
-func (ctl *Controller) LisitOrderByUserID(c *server.Context) error {
-	var (
-		req struct {
-			Userid uint64 `json:"userid"`
-		}
-	)
-
-	if err := c.JSONBody(&req); err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrInvalidParam, nil))
-	}
-
-	orders, err := ctl.service.LisitOrderByUserId(req.Userid)
-	if err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-	}
-
-	return c.ServeJSON(base.RespStatusAndData(constants.ErrSucceed, orders))
-}
-
+//optional
 func (ctl *Controller) OrderIDByOrderCode(c *server.Context) error {
-	var (
-		req struct {
-			Ordercode string `json:"ordercode"`
-		}
-	)
-
+	var req struct {
+		Ordercode string `json:"ordercode"`
+	}
 	if err := c.JSONBody(&req); err != nil {
 		logrus.Error(err)
 		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
@@ -154,122 +101,51 @@ func (ctl *Controller) OrderIDByOrderCode(c *server.Context) error {
 		logrus.Error(err)
 		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
 	}
-
 	return c.ServeJSON(base.RespStatusAndData(constants.ErrSucceed, id))
 }
-//to do fix
-func (ctl *Controller) Pay(c *server.Context) error {
-	var (
-		req struct {
-			OrderId uint32 `json:"orderid"`
-			PayWay  uint8  `json:"payway"`
-		}
-	)
+
+//full info for One Order
+func (ctl *Controller) OrderInfoByOrderID(c *server.Context) error {
+	var req struct {
+		OrderId uint32 `json:"orderid"`
+	}
+	if err := c.JSONBody(&req); err != nil {
+		logrus.Error(err)
+		return c.ServeJSON(base.RespStatusAndData(constants.ErrInvalidParam, nil))
+	}
+
+	rep, err := ctl.service.OrderInfoByOrderKey(req.OrderId)
+	if err != nil {
+		logrus.Error(err)
+		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
+	}
+	return c.ServeJSON(base.RespStatusAndTwoData(constants.ErrSucceed, rep.Order, rep.Orm))
+}
+
+/*
+mode:
+  Unfinished = 0
+  Finished   = 1
+  Paid       = 2
+  Consigned  = 3
+  Canceled   = 4
+*/
+func (ctl *Controller) LisitOrderByUserIDAndStatus(c *server.Context) error {
+	var req struct {
+		Userid uint64 `json:"userid"`
+		Status uint8  `json:"status"`
+	}
 
 	if err := c.JSONBody(&req); err != nil {
 		logrus.Error(err)
 		return c.ServeJSON(base.RespStatusAndData(constants.ErrInvalidParam, nil))
 	}
 
-	if _, err := ctl.service.UpdateTime(req.OrderId, time.Now()); err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-	}
-
-	if _, err := ctl.service.UpdatePayWay(req.OrderId, req.PayWay); err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-	}
-
-	id, err := ctl.service.UpdateStatus(req.OrderId, constants.OrderPaid)
+	orders, err := ctl.service.LisitOrderByUserId(req.Userid, req.Status)
 	if err != nil {
 		logrus.Error(err)
 		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
 	}
 
-	return c.ServeJSON(base.RespStatusAndData(constants.ErrSucceed, id))
-}
-
-func (ctl *Controller) Consign(c *server.Context) error {
-	var (
-		req struct {
-			OrderId      uint32 `json:"orderid"`
-			ShippingCode string `json:"shippingcode"`
-		}
-	)
-
-	if err := c.JSONBody(&req); err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrInvalidParam, nil))
-	}
-
-	if _, err := ctl.service.UpdateTime(req.OrderId, time.Now()); err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-	}
-	if _, err := ctl.service.UpdateShip(req.OrderId, req.ShippingCode); err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-	}
-
-	id, err := ctl.service.UpdateStatus(req.OrderId, constants.OrderConsign)
-	if err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-	}
-
-	return c.ServeJSON(base.RespStatusAndData(constants.ErrSucceed, id))
-
-}
-
-func (ctl *Controller) Success(c *server.Context) error {
-	var (
-		req struct {
-			OrderId uint32 `json:"orderid"`
-		}
-	)
-	if err := c.JSONBody(&req); err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrInvalidParam, nil))
-	}
-
-	if _, err := ctl.service.UpdateTime(req.OrderId, time.Now()); err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-
-	}
-
-	id, err := ctl.service.UpdateStatus(req.OrderId, constants.OrderFinished)
-	if err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-	}
-
-	return c.ServeJSON(base.RespStatusAndData(constants.ErrSucceed, id))
-}
-
-func (ctl *Controller) Cancel(c *server.Context) error {
-	var (
-		req struct {
-			OrderId uint32 `json:"orderid"`
-		}
-	)
-
-	if err := c.JSONBody(&req); err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrInvalidParam, nil))
-	}
-
-	if _, err := ctl.service.UpdateTime(req.OrderId, time.Now()); err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-	}
-
-	id, err := ctl.service.UpdateStatus(req.OrderId, constants.OrderCanceled)
-	if err != nil {
-		logrus.Error(err)
-		return c.ServeJSON(base.RespStatusAndData(constants.ErrOprationInMysql, nil))
-	}
-
-	return c.ServeJSON(base.RespStatusAndData(constants.ErrSucceed, id))
+	return c.ServeJSON(base.RespStatusAndData(constants.ErrSucceed, orders))
 }

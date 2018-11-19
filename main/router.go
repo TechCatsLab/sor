@@ -30,8 +30,8 @@ func (v funcv) OnVerifyFailed(a, b string)  {}
 type funcstock struct{}
 type funcUser struct{}
 
-func (s funcstock) ModifyProductStock(a uint32, b int) error { return nil }
-func (u funcUser) UserCheck(userid uint64) error             { return nil }
+func (s funcstock) ModifyProductStock(tx *sql.Tx, a uint32, b int) error       { return nil }
+func (u funcUser) UserCheck(tx *sql.Tx, userid uint64, productID uint32) error { return nil }
 func init() {
 	router = server.NewRouter()
 	//之前的测试，upload和admin文件夹
@@ -98,13 +98,13 @@ func init() {
 	)
 
 	cccc := &config.Config{
-		OrderDB:    "bill",
-		OrderTable: "order",
-		ItemTable:  "item",
-		Stock:      s,
-		User:       u,
-
+		OrderDB:        "bill",
+		OrderTable:     "order",
+		ItemTable:      "item",
 		ClosedInterval: 24,
+
+		Stock: s,
+		User:  u,
 	}
 
 	order.Register(router, OrderDB, cccc)

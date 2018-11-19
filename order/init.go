@@ -30,13 +30,8 @@ func Register(r *server.Router, db *sql.DB, cnf *config.Config) error {
 
 	r.Post("/api/v1/order/create", c.Insert)
 	r.Post("/api/v1/order/info", c.OrderInfoByOrderID)
-	//fix to more info
-	r.Post("/api/v1/order/user", c.LisitOrderByUserID)
+	r.Post("/api/v1/order/user", c.LisitOrderByUserIDAndStatus)
 	r.Post("/api/v1/order/id", c.OrderIDByOrderCode)
-	r.Post("/api/v1/order/pay", c.Pay)
-	r.Post("/api/v1/order/consign", c.Consign)
-	r.Post("/api/v1/order/success", c.Success)
-	r.Post("/api/v1/order/cancel", c.Cancel)
 
 	return nil
 }

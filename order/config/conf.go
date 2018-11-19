@@ -1,18 +1,23 @@
 package config
-//to do fix
+
+import (
+	"database/sql"
+)
+
 type Stocker interface {
-	ModifyProductStock(targetID uint32, num int) error
+	ModifyProductStock(tx *sql.Tx, targetID uint32, num int) error
 }
 
 type UserChecker interface {
-	UserCheck(userid uint64) error
+	UserCheck(tx *sql.Tx, userid uint64, productID uint32) error
 }
 
 type Config struct {
 	OrderDB        string
 	OrderTable     string
 	ItemTable      string
-	Stock          Stocker
-	User           UserChecker
 	ClosedInterval int
+
+	Stock Stocker
+	User  UserChecker
 }
