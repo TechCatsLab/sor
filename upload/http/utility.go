@@ -6,10 +6,10 @@
 package http
 
 import (
-	"io"
-	"os"
 	"crypto/md5"
 	"encoding/hex"
+	"io"
+	"os"
 
 	"github.com/TechCatsLab/sor/base/constants"
 )

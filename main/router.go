@@ -88,7 +88,8 @@ func init() {
 	banner.Register(router, BannerDB, ccc)
 	*/
 
-	OrderDB, err := sql.Open("mysql", "root:119216@tcp(127.0.0.1:3306)/?parseTime=true")
+	//OrderDB, err := sql.Open("mysql", "root:119216@tcp(127.0.0.1:3306)/?parseTime=true")
+	OrderDB, err := sql.Open("mysql", "root:119216@tcp(10.0.0.1:3306)/?parseTime=true")
 	if err != nil {
 		logrus.Fatal(err)
 	}
